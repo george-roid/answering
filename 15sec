@@ -1,0 +1,113 @@
+// Here are a list of links that correspond to one question each, generate very short answers for them in the next section by replacing "answer" as a female anon, and return this whole entire code with links included:
+var questions = [
+
+
+________________
+________________
+________________
+________________
+
+
+];
+
+// Generate answers below, one per line, between the [ ... ]:
+var answers = [
+"answer",
+"answer",
+"answer"
+];
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function tryPost(opinionURL, formBody) {
+    try {
+        let response = await fetch(opinionURL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: formBody
+        });
+        let responseText = await response.text();
+        let json = null;
+        try { json = JSON.parse(responseText); } catch (e) {}
+
+        let success = false;
+        let alreadyPosted = false;
+        let blocked = false;
+        let anonNotAllowed = false;
+
+        if (json && json.html && json.html.includes("Opinion posted!")) {
+            success = true;
+        } else if (
+            json &&
+            json.message &&
+            typeof json.message.text === "string"
+        ) {
+            let msg = json.message.text.toLowerCase();
+            if (msg.includes("cannot submit more than one opinion")) {
+                alreadyPosted = true;
+            }
+            if (
+                msg.includes("blocked") ||
+                msg.includes("not allowed") ||
+                msg.includes("you are not allowed") ||
+                msg.includes("you cannot answer this question") ||
+                msg.includes("you are not permitted")
+            ) {
+                blocked = true;
+            }
+            if (msg.includes("anonymous opinions are not allowed") || msg.includes("cannot post anonymously")) {
+                anonNotAllowed = true;
+            }
+        }
+        return { success, alreadyPosted, blocked, anonNotAllowed, responseText };
+    } catch (error) {
+        return { success: false, alreadyPosted: false, blocked: false, anonNotAllowed: false, error: error };
+    }
+}
+
+async function postAllQuestions() {
+    var tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+    if (!tokenElement || !tokenElement.value) {
+        console.error("❌ Verification token not found.");
+        return;
+    }
+    var token = tokenElement.value;
+
+    for (let i = 0; i < questions.length; i++) {
+        let questionURL = questions[i];
+        let opinionURL = questionURL + "/opinion";
+        let answerText = answers[i];
+
+        // Try anonymously only
+        let formBodyAnon =
+            "__RequestVerificationToken=" + encodeURIComponent(token) +
+            "&Answer=" + encodeURIComponent(answerText) +
+            "&IsAnonymous=true" +
+            "&DisableComments=false";
+
+        let result = await tryPost(opinionURL, formBodyAnon);
+
+        if (result.success) {
+            console.log(`✅ Anonymously posted to: ${questionURL}`);
+        } else if (result.anonNotAllowed) {
+            console.warn(`⚠️ Anonymous not allowed for: ${questionURL} — skipping.`);
+        } else if (result.alreadyPosted) {
+            console.warn(`⚠️ Opinion already submitted for: ${questionURL}`);
+        } else if (result.blocked) {
+            console.error(`⛔ Blocked from answering: ${questionURL}`);
+        } else {
+            console.error(`❌ Failed to post to: ${questionURL}`);
+            console.error("Server response:", result.responseText || result.error);
+        }
+        // Always wait 15 seconds before next attempt
+        await delay(15000);
+    }
+    console.log("🎉 Posting process completed.");
+}
+
+postAllQuestions();
