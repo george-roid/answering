@@ -1,4 +1,4 @@
-// Here are a list of links that correspond to one question each, generate very short answers for them in the next section by replacing "answer" as a female anon, and return this whole entire code with links included, and be sure to put the links inside "quotes":
+// Here are a list of links that correspond to one question each, generate very short answers as anon male for them in the next section by replacing "answer", and return this whole entire code with links included, and be sure to put the links inside "quotes":
 var questions = [
 
 
