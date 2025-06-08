@@ -1,0 +1,103 @@
+// Here are a list of links that correspond to one question each, generate very short answers as anon male for them in the next section by replacing "answer" yet keeping the entire new answer fully italicized, and return this whole entire code with links included, and be sure to put the links inside "quotes" and ensure no other syntax errors:
+var questions = [
+
+___________
+___________
+___________
+
+];
+
+// Generate answers below, one per line, between the [ ... ]:
+var answers = [
+"<i>answer</i>",
+"<i>answer</i>",
+"<i>answer</i>"
+];
+
+function delay(ms) {
+return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getRandomDelay(minMs, maxMs) {
+return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+}
+
+async function postAllQuestions() {
+const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+if (!tokenElement || !tokenElement.value) {
+console.error("❌ Verification token not found.");
+return;
+}
+const token = tokenElement.value;
+
+for (let i = 0; i < questions.length; i++) {
+const questionURL = questions[i];
+const opinionURL = questionURL + "/opinion";
+const answerText = answers[i];
+
+const formBody =
+"__RequestVerificationToken=" + encodeURIComponent(token) +
+"&Answer=" + encodeURIComponent(answerText) +
+"&IsAnonymous=true" +
+"&DisableComments=false";
+
+try {
+const response = await fetch(opinionURL, {
+method: "POST",
+headers: {
+"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+"X-Requested-With": "XMLHttpRequest"
+},
+body: formBody
+});
+
+const responseText = await response.text();
+let json = null;
+
+try {
+json = JSON.parse(responseText);
+} catch (e) {}
+
+let success = false;
+let alreadyPosted = false;
+let blocked = false;
+
+if (json?.html?.includes("Opinion posted!")) {
+success = true;
+} else if (json?.message?.text) {
+const msg = json.message.text.toLowerCase();
+if (msg.includes("cannot submit more than one opinion")) {
+alreadyPosted = true;
+}
+if (
+msg.includes("blocked") ||
+msg.includes("not allowed") ||
+msg.includes("you are not allowed") ||
+msg.includes("you cannot answer this question") ||
+msg.includes("you are not permitted")
+) {
+blocked = true;
+}
+}
+
+if (success) {
+console.log(`✅ Posted to: ${questionURL}`);
+await delay(getRandomDelay(21000, 37000));
+} else if (alreadyPosted) {
+console.warn(`⚠️ Opinion already submitted for: ${questionURL} — skipping.`);
+} else if (blocked) {
+console.error(`⛔ Blocked from: ${questionURL} — skipping.`);
+} else {
+console.error(`❌ Failed to post to: ${questionURL} (HTTP ${response.status})`);
+console.error("Server response:", responseText);
+}
+
+} catch (error) {
+console.error(`❌ Network error posting to: ${questionURL}`, error);
+}
+}
+
+console.log("🎉 Posting process completed.");
+}
+
+postAllQuestions();
