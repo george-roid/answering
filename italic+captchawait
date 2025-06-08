@@ -90,7 +90,7 @@ async function postAllQuestions() {
         if (success) {
           console.log(`✅ Posted to: ${questionURL}`);
           posted = true;
-          await delay(getRandomDelay(21000, 37000));
+          await delay(getRandomDelay(27000, 42000));
         } else if (alreadyPosted) {
           console.warn(`⚠️ Opinion already submitted for: ${questionURL} — skipping.`);
           posted = true;
