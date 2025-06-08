@@ -1,0 +1,121 @@
+var questions = [
+  "https://www.girlsaskguys.com/break-up-divorce/q5208294-need-advice-on-marriage",
+  "https://www.girlsaskguys.com/entertainment-arts/q5098339-if-you-see-a-grown-adult-still-playing-video-games-publicly-would-you",
+  "https://www.girlsaskguys.com/marriage-weddings/q5371962-marriage-what-is-in-it-for-men"
+];
+
+var answers = [
+  "<i>Communication</i>",
+  "<i>Normal</i>",
+  "<i>Partnership</i>"
+];
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getRandomDelay(minMs, maxMs) {
+  return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+}
+
+async function postAllQuestions() {
+  const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+  if (!tokenElement || !tokenElement.value) {
+    console.error("❌ Verification token not found.");
+    return;
+  }
+  const token = tokenElement.value;
+
+  for (let i = 0; i < questions.length; i++) {
+    const questionURL = questions[i];
+    const opinionURL = questionURL + "/opinion";
+    const answerText = answers[i];
+
+    const formBody =
+      "__RequestVerificationToken=" + encodeURIComponent(token) +
+      "&Answer=" + encodeURIComponent(answerText) +
+      "&IsAnonymous=true" +
+      "&DisableComments=false";
+
+    let posted = false;
+    while (!posted) {
+      try {
+        const response = await fetch(opinionURL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-Requested-With": "XMLHttpRequest"
+          },
+          body: formBody
+        });
+
+        const responseText = await response.text();
+        let json = null;
+
+        try {
+          json = JSON.parse(responseText);
+        } catch (e) {}
+
+        let success = false;
+        let alreadyPosted = false;
+        let blocked = false;
+        let cloudflareBlocked = false;
+
+        if (json?.html?.includes("Opinion posted!")) {
+          success = true;
+        } else if (json?.message?.text) {
+          const msg = json.message.text.toLowerCase();
+          if (msg.includes("cannot submit more than one opinion")) {
+            alreadyPosted = true;
+          }
+          if (
+            msg.includes("blocked") ||
+            msg.includes("not allowed") ||
+            msg.includes("you are not allowed") ||
+            msg.includes("you cannot answer this question") ||
+            msg.includes("you are not permitted")
+          ) {
+            blocked = true;
+          }
+        }
+
+        // Detect Cloudflare/Captcha block
+        if (
+          response.status === 403 &&
+          (responseText.includes("Just a moment...") || responseText.includes("cf-browser-verification"))
+        ) {
+          cloudflareBlocked = true;
+        }
+
+        if (success) {
+          console.log(`✅ Posted to: ${questionURL}`);
+          posted = true;
+          await delay(getRandomDelay(21000, 37000));
+        } else if (alreadyPosted) {
+          console.warn(`⚠️ Opinion already submitted for: ${questionURL} — skipping.`);
+          posted = true;
+        } else if (blocked) {
+          console.error(`⛔ Blocked from: ${questionURL} — skipping.`);
+          posted = true;
+        } else if (cloudflareBlocked) {
+          console.warn(`🛑 Cloudflare/Captcha detected at: ${questionURL}. Pausing for 15 seconds and will retry...`);
+          await delay(15000);
+          // Will retry automatically
+        } else {
+          console.error(`❌ Failed to post to: ${questionURL} (HTTP ${response.status})`);
+          console.error("Server response:", responseText);
+          posted = true;
+        }
+
+      } catch (error) {
+        console.error(`❌ Network error posting to: ${questionURL}`, error);
+        // Optionally retry, or just skip
+        posted = true;
+      }
+    }
+  }
+
+  console.log("🎉 Posting process completed.");
+}
+
+postAllQuestions();
