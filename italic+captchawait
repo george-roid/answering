@@ -1,14 +1,17 @@
 var questions = [
-  "https://www.girlsaskguys.com/break-up-divorce/q5208294-need-advice-on-marriage",
-  "https://www.girlsaskguys.com/entertainment-arts/q5098339-if-you-see-a-grown-adult-still-playing-video-games-publicly-would-you",
-  "https://www.girlsaskguys.com/marriage-weddings/q5371962-marriage-what-is-in-it-for-men"
+___________
+___________
+___________
+
 ];
 
+// Generate answers below, one per line, between the [ ... ]:
 var answers = [
-  "<i>Communication</i>",
-  "<i>Normal</i>",
-  "<i>Partnership</i>"
+"<i>answer</i>",
+"<i>answer</i>",
+"<i>answer</i>"
 ];
+
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
